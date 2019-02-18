@@ -1,12 +1,38 @@
 package lk.ijse.dep.app.business.custom.impl;
 
+import lk.ijse.dep.app.business.Converter;
 import lk.ijse.dep.app.business.custom.ManageOrdersBO;
+import lk.ijse.dep.app.dao.DAOFactory;
+import lk.ijse.dep.app.dao.custom.*;
 import lk.ijse.dep.app.dto.OrderDTO;
 import lk.ijse.dep.app.dto.OrderDTO2;
+import lk.ijse.dep.app.dto.OrderDetailDTO;
+import lk.ijse.dep.app.entity.Item;
+import lk.ijse.dep.app.entity.Order;
+import lk.ijse.dep.app.entity.OrderDetail;
+import lk.ijse.dep.app.util.JPAUtil;
 
+import javax.persistence.EntityManager;
+import java.sql.Date;
 import java.util.List;
 
 public class ManageOrdersBOImpl implements ManageOrdersBO {
+    private OrderDAO orderDAO;
+    private OrderDetailDAO orderDetailDAO;
+    private ItemDAO itemDAO;
+    private QueryDAO queryDAO;
+    private CustomerDAO customerDAO;
+
+
+    public ManageOrdersBOImpl() {
+        orderDAO = DAOFactory.getInstance().getDAO(DAOFactory.DAOTypes.ORDER);
+        orderDetailDAO = DAOFactory.getInstance().getDAO(DAOFactory.DAOTypes.ORDER_DETAIL);
+        itemDAO = DAOFactory.getInstance().getDAO(DAOFactory.DAOTypes.ITEM);
+        queryDAO = DAOFactory.getInstance().getDAO(DAOFactory.DAOTypes.QUERY);
+        customerDAO = DAOFactory.getInstance().getDAO(DAOFactory.DAOTypes.CUSTOMER);
+
+    }
+
     @Override
     public List<OrderDTO2> getOrdersWithCustomerNamesAndTotals() throws Exception {
         return null;
@@ -19,11 +45,50 @@ public class ManageOrdersBOImpl implements ManageOrdersBO {
 
     @Override
     public String generateOrderId() throws Exception {
-        return null;
+        EntityManager em = JPAUtil.getEntityManagerFactory().createEntityManager();
+        try {
+            orderDAO.setEntityManager(em);
+            em.getTransaction().begin();
+            String count = orderDAO.count() + 1 + "";
+            em.getTransaction().commit();
+            return count;
+        } catch (Exception ex) {
+            em.getTransaction().rollback();
+            throw ex;
+        }
     }
 
     @Override
     public void createOrder(OrderDTO dto) throws Exception {
+        boolean result=false;
+        EntityManager em = JPAUtil.getEntityManagerFactory().createEntityManager();
+        try {
+            orderDAO.setEntityManager(em);
+            em.getTransaction().begin();
+            orderDAO.save(new Order(dto.getId(), Date.valueOf(dto.getDate()), Converter.getEntity(dto.getCustomerDTO())));
+            result = true;
+            if (result) {
+                orderDetailDAO.setEntityManager(em);
+
+                for (OrderDetailDTO detailDTO : dto.getOrderDetailDTOS()) {
+                    orderDetailDAO.save(new OrderDetail(dto.getId(),
+                            detailDTO.getCode(), detailDTO.getQty(), detailDTO.getUnitPrice()));
+
+
+                    itemDAO.setEntityManager(em);
+                    Item item = itemDAO.find(detailDTO.getCode()).get();
+                    int qty = item.getQtyOnHand() - detailDTO.getQty();
+                    item.setQtyOnHand(qty);
+                    itemDAO.update(item);
+
+                }
+            }
+
+            em.getTransaction().commit();
+        } catch (Exception ex) {
+            em.getTransaction().rollback();
+            throw ex;
+        }
 
     }
 

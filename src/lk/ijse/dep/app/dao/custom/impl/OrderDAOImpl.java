@@ -7,7 +7,9 @@ import lk.ijse.dep.app.entity.Order;
 public class OrderDAOImpl extends CrudDAOImpl<Order,String> implements OrderDAO {
 
     @Override
-    public int count() throws Exception {
-        return 0;
+    public Long count() throws Exception {
+        Long count= (Long) em.createQuery("SELECT COUNT(o) FROM Order o").getSingleResult();
+        System.out.println(count);
+        return count;
     }
 }
