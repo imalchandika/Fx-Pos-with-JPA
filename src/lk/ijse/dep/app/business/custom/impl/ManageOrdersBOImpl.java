@@ -7,6 +7,7 @@ import lk.ijse.dep.app.dao.custom.*;
 import lk.ijse.dep.app.dto.OrderDTO;
 import lk.ijse.dep.app.dto.OrderDTO2;
 import lk.ijse.dep.app.dto.OrderDetailDTO;
+import lk.ijse.dep.app.entity.CustomEntity;
 import lk.ijse.dep.app.entity.Item;
 import lk.ijse.dep.app.entity.Order;
 import lk.ijse.dep.app.entity.OrderDetail;
@@ -14,7 +15,9 @@ import lk.ijse.dep.app.util.JPAUtil;
 
 import javax.persistence.EntityManager;
 import java.sql.Date;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 public class ManageOrdersBOImpl implements ManageOrdersBO {
     private OrderDAO orderDAO;
@@ -35,12 +38,38 @@ public class ManageOrdersBOImpl implements ManageOrdersBO {
 
     @Override
     public List<OrderDTO2> getOrdersWithCustomerNamesAndTotals() throws Exception {
-        return null;
+        EntityManager em = JPAUtil.getEntityManagerFactory().createEntityManager();
+        try {
+            queryDAO.setEntityManager(em);
+            em.getTransaction().begin();
+
+            List<OrderDTO2> orderDTO2s;
+            orderDTO2s = queryDAO.findAllOrdersWithCustomerNameAndTotal().map(ce -> {
+               return Converter.getDTOList(ce, OrderDTO2.class);
+            }).get();
+
+            em.getTransaction().commit();
+            return orderDTO2s;
+        } catch (Exception ex) {
+            em.getTransaction().rollback();
+            throw ex;
+        }
+
     }
 
     @Override
     public List<OrderDTO> getOrders() throws Exception {
-        return null;
+        EntityManager em = JPAUtil.getEntityManagerFactory().createEntityManager();
+        try {
+            orderDAO.setEntityManager(em);
+            em.getTransaction().begin();
+            List<OrderDTO> orderDTOS = orderDAO.findAll().map(Converter::<OrderDTO>getDTOList).get();
+            em.getTransaction().commit();
+            return orderDTOS;
+        } catch (Exception ex) {
+            em.getTransaction().rollback();
+            throw ex;
+        }
     }
 
     @Override
