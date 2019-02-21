@@ -13,7 +13,14 @@ public class OrderDetailDAOImpl extends CrudDAOImpl<OrderDetail,OrderDetailPK> i
 
 
     @Override
-    public Optional<List<OrderDetail>> find(String orderId) throws Exception {
-        return Optional.empty();
+    public List<OrderDetail> find(String orderId) throws Exception {
+        List<OrderDetail> list1 = em.createQuery("SELECT o FROM OrderDetail o where o.order.id=?1", OrderDetail.class)
+                .setParameter(1,orderId)
+                .getResultList();
+
+        for (OrderDetail orderDetail : list1) {
+            System.out.println(orderDetail.getOrder()+"imal"+orderDetail.getQty());
+        }
+        return list1;
     }
 }

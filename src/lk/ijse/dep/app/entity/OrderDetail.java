@@ -67,11 +67,11 @@ public class OrderDetail extends SuperEntity{
         this.order = order;
     }
 
-    public Item getCode() {
+    public Item getItem() {
         return item;
     }
 
-    public void setCode(Item code) {
+    public void setItem(Item code) {
         this.item = code;
     }
 }
